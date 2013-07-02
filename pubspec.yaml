@@ -4,6 +4,8 @@ dependencies:
   browser: 0.5.20
   caml:
     git: git@github.com:Mixbook/caml.dart.git
+  config:
+    git: git@github.com:ajlai/config.dart.git
   js: 0.0.22
   taco_client:
     git: git@github.com:ajlai/taco_client.git

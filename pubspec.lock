@@ -24,6 +24,13 @@ packages:
       url: "git@github.com:Mixbook/caml.dart.git"
     source: git
     version: "0.3.0"
+  config:
+    description:
+      ref: null
+      resolved-ref: fd87b387e1150bc97c8dfc5d79d0103086d9998b
+      url: "git@github.com:ajlai/config.dart.git"
+    source: git
+    version: "0.1.0"
   crypto:
     description: crypto
     source: hosted

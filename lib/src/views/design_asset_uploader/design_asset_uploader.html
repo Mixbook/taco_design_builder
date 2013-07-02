@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <body>
-    <element name="mb-design-asset-uploader" constructor="DesignAssetUploaderComponent" extends="div">
+    <element name="mb-design-asset-uploader" constructor="DesignAssetUploaderView" extends="div">
       <style type="text/css">
         #asset-list {
           overflow-y: scroll;
@@ -21,24 +21,25 @@
 
         .asset-item {
           float: left;
-          margin: 10px;
+          margin: 5px;
+
         }
         .asset-thumb {
-          height: 120px;
-          width: 120px;
+          max-height: 120px;
+          max-width: 120px;
         }
       </style>
       <template>
         <div id="asset-filter">
           Filter by:
-          <select template iterate="filter in FILTERS" bind-value="currentFilter">
+          <select template iterate="filter in presenter.assetFilters" bind-value="presenter.currentFilter">
             <option value="{{filter}}">{{filter}}</option>
           </select>
         </div>
         <ul id="asset-list">
-          <template iterate="asset in filteredAssets">
+          <template iterate="asset in presenter.filteredAssets">
             <li class="asset-item {{asset.type}}">
-              <p>{{asset.thumb}}</p>
+              <textarea readonly>{{asset.original}}</textarea>
               <img class="asset-thumb" src="{{asset.thumb}}" />
             </li>
           </template>
@@ -46,7 +47,7 @@
 
         <div>
           <input id="upload" type="file">
-          <button>Upload {{currentFilter}}</button>
+          <button id="upload-button" on-click="presenter.handleUpload(this)">Upload {{presenter.currentFilter}}</button>
         </div>
       </template>
       <script type="application/dart" src="design_asset_uploader.dart"></script>

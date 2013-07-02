@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <link rel="import" href="package:taco_design_builder/src/views/design_asset_uploader/design_asset_uploader.html">
+    <link rel="import" href="package:caml/ui/caml.html">
+  </head>
+  <body>
+    <element name="x-app" constructor="AppView" extends="div">
+      <style>
+        .content {
+          display: table;
+          height: 100%;
+          width: 100%;
+        }
+
+        .column {
+          display: table-cell;
+          width: 50%;
+          height: 100%;
+        }
+
+        .section {
+          display: table-row;
+        }
+
+        .fill-height {
+          display: table-row;
+          height: 100%
+        }
+
+        #editor {
+          border: 1px blue solid;
+          height: 100%
+        }
+
+        #caml-container {
+          border: 1px solid red;
+          height: 100%;
+        }
+      </style>
+      <template>
+        <div class="content">
+          <div class="column">
+            <div class="content">
+              <div class="section">
+                <select template iterate="design in presenter.designs" on-change="presenter.handleDesignChange($event)">
+                  <option value="{{design.layoutId.toString()}}" selected="{{design == presenter.currentDesign}}">{{presenter.designOptionLabel(design)}}</option>
+                </select>
+
+                <template if="presenter.currentDesign != null">
+                  <table>
+                    <tr>
+                      <td>Id</td>
+                      <td>{{presenter.currentDesign.id}}</td>
+                    </tr>
+                    <tr>
+                      <td>Layout Id</td>
+                      <td>{{presenter.currentDesign.layoutId}}</td>
+                    </tr>
+                    <tr>
+                      <td>Layout Name</td>
+                      <td>{{presenter.currentDesign.layoutName}}</td>
+                    </tr>
+                    <tr>
+                      <td>Dirty?</td>
+                      <td>{{presenter.currentDesign.dirty}}</td>
+                    </tr>
+                  </table>
+                  <button on-click="presenter.renderCaml()">rerender</button>
+                  <button disabled={{!presenter.currentDesign.dirty}} on-click="presenter.handleSave()">{{presenter.currentDesign.dirty ? "Save" : "Saved"}}</button>
+                </template>
+              </div>
+              <div class="section fill-height">
+                <div id="editor">ACE EDITOR</div>
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="content">
+              <div class="section">
+                <div is="mb-design-asset-uploader" presenter={{presenter}}></div>
+              </div>
+              <div class="fill-height">
+                <template if="presenter.camlElement != null">
+                  Region:
+                  <select bind-value="presenter.camlRenderer.region">
+                    <option template repeat="region in presenter.camlElement.regions" value="{{region.id}}">{{region.id}}</option>
+                  </select>
+                </template>
+                <div id="caml-container">CAML</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <script type="application/dart" src="app.dart"></script>
+    </element>
+  </body>
+</html>
