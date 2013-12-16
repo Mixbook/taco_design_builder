@@ -32,14 +32,14 @@
       <template>
         <div id="asset-filter">
           Filter by:
-          <select template iterate="filter in presenter.assetFilters" bind-value="presenter.currentFilter">
+          <select template iterate="filter in presenter.assetFilters" bind-value="presenter.currentAssetFilter">
             <option value="{{filter}}">{{filter}}</option>
           </select>
         </div>
         <ul id="asset-list">
           <template iterate="asset in presenter.filteredAssets">
             <li class="asset-item {{asset.type}}">
-              <textarea readonly>{{asset.original}}</textarea>
+              <textarea readonly>{{asset.mixbookUri}}</textarea>
               <img class="asset-thumb" src="{{asset.thumb}}" />
             </li>
           </template>
@@ -47,7 +47,7 @@
 
         <div>
           <input id="upload" type="file">
-          <button id="upload-button" on-click="presenter.handleUpload(this)">Upload {{presenter.currentFilter}}</button>
+          <button id="upload-button" on-click="presenter.handleUpload(this)">Upload {{presenter.currentAssetFilter}}</button>
         </div>
       </template>
       <script type="application/dart" src="design_asset_uploader.dart"></script>

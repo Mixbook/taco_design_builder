@@ -1,7 +1,7 @@
 library views.app;
 import 'package:taco_design_builder/src/models.dart';
-import 'package:taco_client/mixbook_web_component.dart';
-import 'package:js/js.dart' as js;
+import 'package:taco_helpers/src/mixbook_web_component.dart';
+import 'dart:js';
 import 'package:web_ui/web_ui.dart';
 import 'package:caml/caml.dart';
 import 'package:caml/taco.dart';
@@ -10,39 +10,69 @@ import 'dart:html';
 
 @observable
 class AppPresenter {
-  static const ASSET_FILTERS = Asset.TYPES;
-
   var editor;
 
-  List<String> assetFilters = ASSET_FILTERS;
-  String currentFilter = ASSET_FILTERS.first;
+  LoadedDesigns loadedDesigns;
+  LoadedAssets<Sticker> loadedStickers;
+  LoadedAssets<Background> loadedBackgrounds;
 
-  List<Asset> assets = toObservable(new List<Asset>());
-  Iterable<Asset> get filteredAssets => assets.where((asset) => asset.type == currentFilter);
+  String currentAssetFilter;
 
-  List<Design> designs = toObservable(new List<Design>());
+  Map<String, LoadedAssets> loadedAssetsByType = {};
+  Iterable<String> get assetFilters => loadedAssetsByType.keys;
+  LoadedAssets get currentLoadedAssets => loadedAssetsByType[currentAssetFilter];
+  Iterable<Asset> get filteredAssets => currentLoadedAssets.loaded;
+
+  Iterable<Design> get designs => loadedDesigns.loaded;
   Design currentDesign;
 
   var camlElement;
-  var camlRenderer;
-  var tacoExtension = new TacoExtension();
+  var region;
+  var debugHelpers;
+  var useAnimationFrame;
+  var visibleGuides;
 
   AppPresenter() {
+    loadedDesigns = buildLoadedDesigns();
+    loadedStickers = buildLoadedStickers();
+    loadedBackgrounds = buildLoadedBackgrounds();
+
+    loadedAssetsByType["sticker"] = loadedStickers;
+    loadedAssetsByType["background"] = loadedBackgrounds;
+    currentAssetFilter = assetFilters.first;
+
+    convertToObservable(loadedStickers);
+    convertToObservable(loadedBackgrounds);
+    convertToObservable(loadedDesigns);
+
+    setupCaml();
+
     Future.wait([
-      Asset.load().then((loaded) => assets.addAll(loaded)),
-      Design.load().then((loaded) {
-        designs.addAll(loaded);
+      loadedStickers.populate(),
+      loadedBackgrounds.populate(),
+      loadedDesigns.populate().then((_) {
         currentDesign = designs.first;
         setupAce();
         renderCaml();
-        registerScheme();
-    })]);
+      })
+    ]);
+  }
+
+  void convertToObservable(LoadedModels loadedModels) {
+    loadedModels.loaded = toObservable(loadedModels.loaded);
+  }
+
+  void setupCaml() {
+    debugHelpers = true;
+    useAnimationFrame = true;
+    visibleGuides = "";
+    registerExtension(new TacoExtension());
   }
 
   void handleDesignChange(Event event) {
     var newValue = (event.target as SelectElement).value;
     currentDesign = designs.firstWhere((Design design) => design.layoutId.toString() == newValue);
-    currentDesign.freezeDirty((d) => editor.session.setValue(d.caml)); // need to freezeDirty otherwise CB will trigger dirty caml is set.
+    currentDesign.freezeDirty((d) => resetEditorValue(d.caml)); // need to freezeDirty otherwise CB will trigger dirty caml is set.
     renderCaml();
   }
 
@@ -57,51 +87,42 @@ class AppPresenter {
     uploadButton.disabled = true;
 
     if (elem.files.length == 1) {
-      File file = elem.files.first;
-      FileReader reader = new FileReader();
-      reader.onLoadEnd.listen((_) {
-        Asset.fromDataUrl(dataUrl: reader.result, type: currentFilter).then((Asset asset) {
-          assets.add(asset);
-          uploadButton.disabled = false;
-        });
+      var file = elem.files.first;
+      currentLoadedAssets.addFromFile(file).then((_) {
+        uploadButton.disabled = false;
       });
-      reader.readAsDataUrl(file);
-      print("read");
       elem.replaceWith(elem.clone(true)); // Clear the upload input afterwards.
     }
   }
 
-  void setupAce() {
-    js.scoped(() {
-      var ace = js.context.ace;
-      editor = new js.Proxy(ace.edit, 'editor');
-      editor.setTheme('ace/theme/github');
-      editor.getSession().setMode('ace/mode/xml');
-      editor.getSession().setTabSize(2);
-
-      // We use editor.session.setValue because it clears the undoManager as well https://github.com/ajaxorg/ace/issues/1243
-      editor.session.setValue(currentDesign.caml);
-
-      editor.on('change', new js.Callback.many((_, __) => handleEditorChange()));
-
-      js.retain(editor);
-    });
+  void resetEditorValue(String value) {
+    // We use editor.session.setValue because it clears the undoManager as well https://github.com/ajaxorg/ace/issues/1243
+    editor['session'].callMethod('setValue', [value]);
   }
 
   void handleEditorChange() {
-    currentDesign.caml = editor.getValue();
+    currentDesign.caml = editor.callMethod('getValue', []);
+  }
+
+  void setupAce() {
+    var ace = context['ace'];
+    editor = new JsObject(ace['edit'], ['editor']);
+    editor.callMethod('setTheme', ['ace/theme/github']);
+
+    editor['session']
+        ..callMethod('setMode', ['ace/mode/xml'])
+        ..callMethod('setTabSize', [2]);
+
+    resetEditorValue(currentDesign.caml);
+    editor.callMethod('on', ['change', (_, __) => handleEditorChange()]);
   }
 
   void renderCaml() {
 //    query("#caml-container").innerHtml = currentDesign.caml;
-    var camlContainer = query("#caml-container");
+    var camlContainer = querySelector("#caml-container");
     try {
-      if (camlRenderer != null) { camlRenderer.detach(); }
-      camlElement = new CamlElement.caml(currentDesign.caml, extensions: [tacoExtension]);
-      camlRenderer = camlElement.createRenderer();
-      camlRenderer.debugFocalBoxes = true;
+      camlElement = new CamlElement.caml(currentDesign.caml);
       camlContainer.innerHtml = ""; // Clear previous error message
-      camlRenderer.attachTo(camlContainer);
     } catch(e) {
       String error = "Rerender error: $e";
       camlContainer.innerHtml = error;
