@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <element name="mb-design-asset-uploader" constructor="DesignAssetUploaderView" extends="div">
+      <style type="text/css">
+        #asset-list {
+          overflow-y: scroll;
+          height: 300px;
+          border: 1px solid red;
+          list-style: none;
+          margin: 0;
+        }
+
+        .background {
+          background: lightblue;
+        }
+
+        .sticker {
+          background: lightgreen;
+        }
+
+        .asset-item {
+          float: left;
+          margin: 5px;
+
+        }
+        .asset-thumb {
+          max-height: 120px;
+          max-width: 120px;
+        }
+      </style>
+      <template>
+        <div id="asset-filter">
+          Filter by:
+          <select template iterate="filter in presenter.assetFilters" bind-value="presenter.currentAssetFilter">
+            <option value="{{filter}}">{{filter}}</option>
+          </select>
+        </div>
+        <ul id="asset-list">
+          <template iterate="asset in presenter.filteredAssets">
+            <li class="asset-item {{asset.type}}">
+              <textarea readonly>{{asset.mixbookUri}}</textarea>
+              <img class="asset-thumb" src="{{asset.thumb}}" />
+            </li>
+          </template>
+        </ul>
+
+        <div>
+          <input id="upload" type="file">
+          <button id="upload-button" on-click="presenter.handleUpload(this)">Upload {{presenter.currentAssetFilter}}</button>
+        </div>
+      </template>
+      <script type="application/dart" src="design_asset_uploader.dart"></script>
+    </element>
+  </body>
+</html>

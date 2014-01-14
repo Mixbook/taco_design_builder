@@ -1,0 +1,14 @@
+name: taco_design_builder
+description: A sample WebUI application
+dependencies:
+  browser: any
+  caml:
+    git: git@github.com:Mixbook/caml.dart.git
+  config:
+    git: git@github.com:Mixbook/config.dart.git
+  js: any
+  restful:
+    git: git@github.com:Mixbook/restful.dart.git
+  taco_helpers:
+    git: git@github.com:Mixbook/taco_helpers.dart.git
+  web_ui: any
